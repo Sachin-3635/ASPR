@@ -1,0 +1,18 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": false,
+    "nodeVersion": "22.16.0",
+    "sdksVersions": {},
+    "version": "1.21.1",
+    "libraryName": "aps-rdms",
+    "libraryId": "1c943d6f-8628-4cc6-9e76-00d91ee42866",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "APSRdms",
+    "solutionShortDescription": "APSRdms description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}

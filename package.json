@@ -1,0 +1,59 @@
+{
+  "name": "aps-rdms",
+  "version": "0.0.1",
+  "private": true,
+  "engines": {
+    "node": ">=22.14.0 < 23.0.0"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "gulp bundle",
+    "clean": "gulp clean",
+    "test": "gulp test"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.0.0",
+    "@fluentui/react": "^8.106.4",
+    "@fontsource/tajawal": "^5.2.6",
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@microsoft/sp-component-base": "1.21.1",
+    "@microsoft/sp-core-library": "1.21.1",
+    "@microsoft/sp-lodash-subset": "1.21.1",
+    "@microsoft/sp-office-ui-fabric-core": "1.21.1",
+    "@microsoft/sp-property-pane": "1.21.1",
+    "@microsoft/sp-webpart-base": "1.21.1",
+    "@pnp/nodejs": "^4.7.0",
+    "@pnp/sp": "^4.13.0",
+    "@pnp/spfx-controls-react": "^3.21.0",
+    "antd": "^5.25.4",
+    "bootstrap": "^5.3.6",
+    "file-saver": "^2.0.5",
+    "formik": "^2.4.6",
+    "react": "17.0.1",
+    "react-dom": "17.0.1",
+    "react-router-dom": "^6.30.1",
+    "react-slick": "^0.30.3",
+    "slick-carousel": "^1.8.1",
+    "tslib": "2.3.1",
+    "yup": "^1.6.1"
+  },
+  "devDependencies": {
+    "@microsoft/eslint-config-spfx": "1.21.1",
+    "@microsoft/eslint-plugin-spfx": "1.21.1",
+    "@microsoft/rush-stack-compiler-5.3": "0.1.0",
+    "@microsoft/sp-build-web": "1.21.1",
+    "@microsoft/sp-module-interfaces": "1.21.1",
+    "@rushstack/eslint-config": "4.0.1",
+    "@types/file-saver": "^2.0.7",
+    "@types/react": "17.0.45",
+    "@types/react-dom": "17.0.17",
+    "@types/react-slick": "^0.23.13",
+    "@types/webpack-env": "~1.15.2",
+    "ajv": "^6.12.5",
+    "eslint": "8.57.1",
+    "eslint-plugin-react-hooks": "4.3.0",
+    "gulp": "4.0.2",
+    "spfx-fast-serve-helpers": "~1.21.0",
+    "typescript": "~5.3.3"
+  }
+}

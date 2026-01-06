@@ -1,0 +1,37 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "apsrdms-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/apsrdms/ApsrdmsWebPart.js",
+          "manifest": "./src/webparts/apsrdms/ApsrdmsWebPart.manifest.json"
+        }
+      ]
+    },
+    "dmswebaspr-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/dmswebaspr/DmswebasprWebPart.js",
+          "manifest": "./src/webparts/dmswebaspr/DmswebasprWebPart.manifest.json"
+        }
+      ]
+    },
+    "apsrdms-solution-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/apsrdmsSolution/ApsrdmsSolutionWebPart.js",
+          "manifest": "./src/webparts/apsrdmsSolution/ApsrdmsSolutionWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "ApsrdmsWebPartStrings": "lib/webparts/apsrdms/loc/{locale}.js",
+    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js",
+    "DmswebasprWebPartStrings": "lib/webparts/dmswebaspr/loc/{locale}.js",
+    "ApsrdmsSolutionWebPartStrings": "lib/webparts/apsrdmsSolution/loc/{locale}.js"
+  }
+}

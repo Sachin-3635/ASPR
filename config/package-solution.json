@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "aps-rdms-client-side-solution",
+    "id": "1c943d6f-8628-4cc6-9e76-00d91ee42866",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.21.1"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "APSRdms description"
+      },
+      "longDescription": {
+        "default": "APSRdms description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "aps-rdms Feature",
+        "description": "The feature that activates elements of the aps-rdms solution.",
+        "id": "559ca950-3aa5-4c1c-9254-810e7d696abd",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/aps-rdms.sppkg"
+  }
+}
