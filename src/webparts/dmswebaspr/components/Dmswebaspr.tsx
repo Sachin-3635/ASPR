@@ -12,6 +12,7 @@ import { spfi, SPFx } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/lists/web";
 import { setupSP } from '../services/dal/pnpget';
+import { LibraryDocuments } from './DMSPage/DMSShowPage';
 
 interface IDmsModuleState {
   defaultLibraryTitle: string | null;
@@ -73,12 +74,12 @@ export default class DmsModule extends React.Component<IDmswebasprProps, IDmsMod
               {defaultLibraryTitle && (
                 <Route
                   path="/"
-                  element={<Navigate to={`/library/${defaultLibraryTitle}`} replace />}
+                  element={<Navigate to={`/library`} replace />}
                 />
               )}
 
               <Route
-                path="/library/:libraryName"
+                path="/library"
                 element={
                   <ASPRDMSHomeArabic
                     context={this.props.context}
@@ -86,6 +87,7 @@ export default class DmsModule extends React.Component<IDmswebasprProps, IDmsMod
                   />
                 }
               />
+              <Route path="/library/:libraryName" element={<LibraryDocuments {...this.props} />} />
               <Route path="/dashboard" element={<Dashboard {...this.props} />} />
               <Route path="/Request" element={<RequestPage {...this.props} />} />
             </Routes>
