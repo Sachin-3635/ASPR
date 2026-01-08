@@ -25,6 +25,7 @@ import { set } from "@microsoft/sp-lodash-subset/lib/index";
 import LibraryOps from "../../services/bal/Library";
 import { saveAs } from "file-saver";
 import JSZip from "jszip";
+import { useLocation } from "react-router-dom";
 
 interface IFileItem {
     Name: string;
@@ -46,13 +47,15 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
     const { libraryName } = useParams<{ libraryName: string }>();
     const sp = spfi().using(SPFx(props.context));
 
+    const location = useLocation();
+
+    const isArabic = location.state?.isArabic ?? localStorage.getItem("isArabic") === "true";
     const [files, setFiles] = useState<IFileItem[]>([]);
     const [breadcrumb, setBreadcrumb] = useState<IFileItem[]>([]);
     const [currentFolder, setCurrentFolder] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const [isOpen, setIsOpen] = useState(false);
-    const [isArabic, setIsArabic] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [newFolderName, setNewFolderName] = useState("");
     const [newFile, setNewFile] = useState("");
@@ -61,9 +64,9 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
     const [viewUsers, setViewUsers] = useState<any[]>([]);
     const [activeLibrary, setActiveLibrary] = useState<ILibrary | null>(null);
     const [libraries, setLibraries] = useState<ILibrary[]>([]);
-        const [fileList, setFileList] = React.useState<File[]>([]);
-            const navigate = useNavigate();
-        
+    const [fileList, setFileList] = React.useState<File[]>([]);
+    const navigate = useNavigate();
+const [translatedLibraryName, setTranslatedLibraryName] = useState<string>(libraryName || "");
     const peoplePickerContext: IPeoplePickerContext = {
         msGraphClientFactory: props.currentSPContext.msGraphClientFactory as unknown as IPeoplePickerContext["msGraphClientFactory"],
         spHttpClient: props.currentSPContext.spHttpClient as unknown as IPeoplePickerContext["spHttpClient"],
@@ -79,23 +82,23 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
 
         // Get first visible document library (BaseTemplate 101 = Document Library)
         const loadLibraries = async () => {
-        const libOps = LibraryOps();
-        const allLibs = await libOps.getAllLibraries(props);
+            const libOps = LibraryOps();
+            const allLibs = await libOps.getAllLibraries(props);
 
-       
-                if (allLibs.length > 0) {
-                    setLibraries(allLibs);
-                    const selectedLibrary = allLibs.find(
-                        (lib) => lib.Title === libraryName
-                    );
 
-                    if (selectedLibrary) {
-                        setActiveLibrary(selectedLibrary);
-                        setCurrentFolder(null);
-                        setBreadcrumb([]);
-                    }
+            if (allLibs.length > 0) {
+                setLibraries(allLibs);
+                const selectedLibrary = allLibs.find(
+                    (lib) => lib.Title === libraryName
+                );
+
+                if (selectedLibrary) {
+                    setActiveLibrary(selectedLibrary);
+                    setCurrentFolder(null);
+                    setBreadcrumb([]);
                 }
-            
+            }
+
 
         };
         loadLibraries();
@@ -111,6 +114,18 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
         setNewFile("");
     };
     useEffect(() => {
+            const translateLibraryName = async () => {
+        if (!libraryName) return;
+
+        if (!isArabic) {
+            setTranslatedLibraryName(libraryName);
+            return;
+        }
+
+        const translated = await translateText(libraryName, "ar");
+        setTranslatedLibraryName(translated || libraryName);
+    };
+    translateLibraryName();
         const handleClickOutside = (event: MouseEvent) => {
             if (
                 dropdownRef.current &&
@@ -129,10 +144,27 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
+
+        
     }, [isOpen]);
     // 🔹 Load files
     const toggleDropdown = () => setIsOpen(!isOpen);
 
+    const translateText = async (text: string, toLang: string): Promise<string> => {
+        try {
+            if (toLang === "en") {
+                return text;
+            }
+            const response = await fetch(
+                `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${toLang}`
+            );
+            const data = await response.json();
+            return data.responseData.translatedText;
+        } catch (err) {
+            console.error("Translation error:", err);
+            return text; // fallback to original
+        }
+    };
 
     useEffect(() => {
         const loadFiles = async () => {
@@ -159,27 +191,52 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
                 // 🔹 Fetch files
                 const fileItems = await folder.files
                     .select("Name", "TimeLastModified", "ServerRelativeUrl", "Author/Title", "ListItemAllFields/FullName")
-                    .expand("Author", "ListItemAllFields")() as unknown as IFolderWithListItem[];;
-                const mapped: IFileItem[] = [
+                    .expand("Author", "ListItemAllFields")() as unknown as IFolderWithListItem[];
+                const safeTranslate = async (text: string) => {
+                    // No translation needed when in English mode
+                    if (!isArabic) return text;
+
+                    // Already Arabic translation exists?
+                    const translated = await translateText(text, "ar");
+                    return translated || text;
+                };
+
+                const mapped: IFileItem[] = await Promise.all([
                     ...subFolders
                         .filter(f => f.Name !== "Forms")
-                        .map(f => ({
+                        .map(async (f) => {
+                            const translatedName = isArabic
+                                ? await translateText(f.Name, "ar")
+                                : f.Name;
+
+                            return {
+                                Name: f.Name,
+                                FullName: f.ListItemAllFields?.FullName || f.Name,
+                                TimeLastModified: "",
+                                AuthorTitle: "",
+                                IsFolder: true,
+                                ServerRelativeUrl: f.ServerRelativeUrl,
+                                TranslatedName: translatedName
+                            };
+                        }),
+
+                    ...fileItems.map(async (f) => {
+                        const translatedName = isArabic
+                            ? await translateText(f.Name, "ar")
+                            : f.Name;
+
+                        return {
                             Name: f.Name,
+                            TimeLastModified: f.TimeLastModified,
                             FullName: f.ListItemAllFields?.FullName || f.Name,
-                            TimeLastModified: "",
-                            AuthorTitle: "",
-                            IsFolder: true,
-                            ServerRelativeUrl: f.ServerRelativeUrl
-                        })),
-                    ...fileItems.map(f => ({
-                        Name: f.Name,
-                        TimeLastModified: f.TimeLastModified,
-                        FullName: f.ListItemAllFields?.FullName || f.Name,
-                        AuthorTitle: f.Author?.Title || "",
-                        IsFolder: false,
-                        ServerRelativeUrl: f.ServerRelativeUrl
-                    }))
-                ];
+                            AuthorTitle: f.Author?.Title || "",
+                            IsFolder: false,
+                            ServerRelativeUrl: f.ServerRelativeUrl,
+                            TranslatedName: translatedName
+                        };
+                    })
+                ]);
+
 
                 setFiles(mapped);
             } catch (err) {
@@ -192,16 +249,48 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
 
         loadFiles();
     }, [libraryName, currentFolder]);
+useEffect(() => {
+    if (!isArabic) return;
+
+    const updateBreadcrumbTranslations = async () => {
+        const updated = await Promise.all(
+            breadcrumb.map(async (b) => ({
+                ...b,
+                TranslatedName: b.TranslatedName || await translateText(b.Name, "ar")
+            }))
+        );
+
+        setBreadcrumb(updated);
+    };
+
+    updateBreadcrumbTranslations();
+}, [isArabic]);
 
     // 🔹 Click handler
-    const handleItemClick = (item: IFileItem) => {
-        if (item.IsFolder) {
-            setBreadcrumb(prev => [...prev, item]);
-            setCurrentFolder(item.ServerRelativeUrl);
-        } else {
-            window.open(item.ServerRelativeUrl + "?web=1", "_blank");
-        }
-    };
+  const handleItemClick = (item: IFileItem) => {
+    if (item.IsFolder) {
+        setBreadcrumb(prev => {
+            // 🔹 Avoid duplicates
+            if (prev.find(b => b.ServerRelativeUrl === item.ServerRelativeUrl)) {
+                return prev;
+            }
+
+            return [
+                ...prev,
+                {
+                    ...item,
+                    // ✅ ensure breadcrumb has translated name
+                    TranslatedName: item.TranslatedName || item.Name
+                }
+            ];
+        });
+
+        setCurrentFolder(item.ServerRelativeUrl);
+    } else {
+        window.open(item.ServerRelativeUrl + "?web=1", "_blank");
+    }
+};
+
 
     // 🔹 Breadcrumb click
     const handleBreadcrumbClick = (index: number) => {
@@ -364,106 +453,121 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
             setLoading(false);
         }
     };
-      const handleFileUpload = async (fileList: File[]) => {
-            if (!activeLibrary) {
-                message.error("No active library selected.");
-                return;
-            }
-    
-            const webAbsoluteUrl = props.context.pageContext.web.absoluteUrl;
-    
-            // ✅ Target folder = last breadcrumb OR library root
-            const targetFolder =
-                breadcrumb.length > 0
-                    ? breadcrumb[breadcrumb.length - 1].ServerRelativeUrl
-                    : activeLibrary.RootFolder.ServerRelativeUrl;
-    
-            try {
-                setLoading(true);
-                const requestDigest = await getRequestDigest();
-    
-                const uploadPromises = fileList.map(async (file) => {
-                    const uploadUrl = `${webAbsoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${targetFolder}')/Files/add(overwrite=true, url='${file.name}')`;
-    
-                    try {
-                        const fileBuffer = await file.arrayBuffer();
-    
-                        const response = await fetch(uploadUrl, {
-                            method: "POST",
-                            body: fileBuffer,
-                            headers: {
-                                "Accept": "application/json;odata=verbose",
-                                "X-RequestDigest": requestDigest,
-                                "Content-Type": "application/octet-stream",
-                            },
-                        });
-    
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            return { file, success: false, error: errorData.error.message.value };
-                        }
-    
-                        return { file, success: true };
-                    } catch (error: any) {
-                        return { file, success: false, error: error.message };
+    const handleFileUpload = async (fileList: File[]) => {
+        if (!activeLibrary) {
+            message.error("No active library selected.");
+            return;
+        }
+
+        const webAbsoluteUrl = props.context.pageContext.web.absoluteUrl;
+
+        // ✅ Target folder = last breadcrumb OR library root
+        const targetFolder =
+            breadcrumb.length > 0
+                ? breadcrumb[breadcrumb.length - 1].ServerRelativeUrl
+                : activeLibrary.RootFolder.ServerRelativeUrl;
+
+        try {
+            setLoading(true);
+            const requestDigest = await getRequestDigest();
+
+            const uploadPromises = fileList.map(async (file) => {
+                const uploadUrl = `${webAbsoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${targetFolder}')/Files/add(overwrite=true, url='${file.name}')`;
+
+                try {
+                    const fileBuffer = await file.arrayBuffer();
+
+                    const response = await fetch(uploadUrl, {
+                        method: "POST",
+                        body: fileBuffer,
+                        headers: {
+                            "Accept": "application/json;odata=verbose",
+                            "X-RequestDigest": requestDigest,
+                            "Content-Type": "application/octet-stream",
+                        },
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        return { file, success: false, error: errorData.error.message.value };
                     }
-                });
-    
-                const results = await Promise.all(uploadPromises);
-    
-                const successFiles = results.filter((res) => res.success).map((res) => res.file.name);
-                const failedFiles = results.filter((res) => !res.success);
-    
-                if (successFiles.length > 0) {
-                    message.success(`Uploaded: ${successFiles.join(", ")}`);
-    
-                    // ✅ Reload files in the current folder instead of resetting state
-                    const folder = sp.web.getFolderByServerRelativePath(targetFolder);
-    
-                    const subFolders = await folder.folders
-                        .select("Name", "TimeLastModified", "ServerRelativeUrl")();
-    
-                    const fileItems = await folder.files
-                        .select("Name", "TimeLastModified", "Author/Title", "ServerRelativeUrl")
-                        .expand("Author")();
-    
-                    const mappedItems: IFileItem[] = [
-                        ...subFolders.map((f: any) => ({
+
+                    return { file, success: true };
+                } catch (error: any) {
+                    return { file, success: false, error: error.message };
+                }
+            });
+
+            const results = await Promise.all(uploadPromises);
+
+            const successFiles = results.filter((res) => res.success).map((res) => res.file.name);
+            const failedFiles = results.filter((res) => !res.success);
+
+            if (successFiles.length > 0) {
+                message.success(`Uploaded: ${successFiles.join(", ")}`);
+
+                // ✅ Reload files in the current folder instead of resetting state
+                const folder = sp.web.getFolderByServerRelativePath(targetFolder);
+
+                const subFolders = await folder.folders
+                    .select("Name", "TimeLastModified", "ServerRelativeUrl")();
+
+                const fileItems = await folder.files
+                    .select("Name", "TimeLastModified", "Author/Title", "ServerRelativeUrl")
+                    .expand("Author")();
+
+                const mappedItems: IFileItem[] = await Promise.all([
+                    ...subFolders.map(async (f: any) => {
+                        const translatedName = isArabic
+                            ? await translateText(f.Name, "ar")
+                            : f.Name;
+
+                        return {
                             Name: f.Name,
                             FullName: f.FullName,
                             TimeLastModified: f.TimeLastModified,
                             AuthorTitle: "",
                             IsFolder: true,
                             ServerRelativeUrl: f.ServerRelativeUrl,
-                        })),
-                        ...fileItems.map((f: any) => ({
+                            TranslatedName: translatedName
+                        };
+                    }),
+
+                    ...fileItems.map(async (f: any) => {
+                        const translatedName = isArabic
+                            ? await translateText(f.Name, "ar")
+                            : f.Name;
+
+                        return {
                             Name: f.Name,
                             FullName: f.FullName,
                             TimeLastModified: f.TimeLastModified,
                             AuthorTitle: f.Author?.Title || "",
                             IsFolder: false,
                             ServerRelativeUrl: f.ServerRelativeUrl,
-                        })),
-                    ];
-    
-                    setFiles(mappedItems);
-    
-                    closeModalfile();
-                }
-    
-                if (failedFiles.length > 0) {
-                    message.error(
-                        `Failed uploads:\n${failedFiles.map((res) => `${res.file.name}: ${res.error}`).join("\n")}`
-                    );
-                }
-            } catch (error) {
-                message.error("Upload failed due to authentication error.");
-                console.error("Authentication Error:", error);
-            } finally {
-                setLoading(false);
+                            TranslatedName: translatedName
+                        };
+                    })
+                ]);
+
+                setFiles(mappedItems);
+
+                closeModalfile();
             }
-        };
-         const getRequestDigest = async (): Promise<string> => {
+
+            if (failedFiles.length > 0) {
+                message.error(
+                    `Failed uploads:\n${failedFiles.map((res) => `${res.file.name}: ${res.error}`).join("\n")}`
+                );
+            }
+        } catch (error) {
+            message.error("Upload failed due to authentication error.");
+            console.error("Authentication Error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    const getRequestDigest = async (): Promise<string> => {
         const digestUrl = `${props.context.pageContext.web.absoluteUrl}/_api/contextinfo`;
         try {
             const response = await fetch(digestUrl, {
@@ -485,139 +589,144 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
             throw error;
         }
     };
-      const downloadFolderAsZip = async (folder: IFileItem) => {
-            const zip = new JSZip();
-            const folderZip = zip.folder(folder.Name)!;
-    
-            const addFilesToZip = async (folderUrl: string, parentZip: JSZip) => {
-                try {
-                    const response = await fetch(
-                        `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(folderUrl)}')?$expand=Files,Folders`,
-                        { headers: { Accept: "application/json;odata=verbose" } }
-                    );
-    
-                    if (!response.ok) {
-                        const err = await response.text();
-                        throw new Error(`Failed to fetch folder contents: ${err}`);
-                    }
-    
-                    const data = await response.json();
-    
-                    // Add files
-                    for (const file of data.d.Files.results) {
-                        const fileResponse = await fetch(
-                            `${props.context.pageContext.web.absoluteUrl}${encodeURIComponent(file.ServerRelativeUrl)}`
-                        );
-                        const blob = await fileResponse.blob();
-                        parentZip.file(file.Name, blob);
-                    }
-    
-                    // Recurse into subfolders
-                    for (const subfolder of data.d.Folders.results) {
-                        const subfolderZip = parentZip.folder(subfolder.Name)!;
-                        await addFilesToZip(subfolder.ServerRelativeUrl, subfolderZip);
-                    }
-                } catch (error) {
-                    console.error("Error adding files to ZIP:", error);
-                }
-            };
-    
-            await addFilesToZip(folder.ServerRelativeUrl, folderZip);
-            zip.generateAsync({ type: "blob" }).then((blob) =>
-                saveAs(blob, `${folder.Name}.zip`)
-            );
-        };
-    
-        // 📌 Download file directly
-        const downloadFile = async (fileUrl: string, fileName: string) => {
-            if (!fileUrl) {
-                message.error("File URL not found.");
-                return;
-            }
-    
-            const serverRelativeUrl = fileUrl.replace(
-                props.context.pageContext.web.absoluteUrl,
-                ""
-            );
-    
-            const downloadApiUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFileByServerRelativeUrl('${encodeURIComponent(serverRelativeUrl)}')/$value`;
-    
+    const downloadFolderAsZip = async (folder: IFileItem) => {
+        const zip = new JSZip();
+        const folderZip = zip.folder(folder.Name)!;
+
+        const addFilesToZip = async (folderUrl: string, parentZip: JSZip) => {
             try {
-                const response = await fetch(downloadApiUrl, {
-                    method: "GET",
-                    headers: {
-                        Accept: "application/octet-stream",
-                    },
-                });
-    
+                const response = await fetch(
+                    `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFolderByServerRelativeUrl('${encodeURIComponent(folderUrl)}')?$expand=Files,Folders`,
+                    { headers: { Accept: "application/json;odata=verbose" } }
+                );
+
                 if (!response.ok) {
                     const err = await response.text();
-                    throw new Error(`Failed to download file. Status: ${response.status}, ${err}`);
+                    throw new Error(`Failed to fetch folder contents: ${err}`);
                 }
-    
-                const blob = await response.blob();
-                const downloadLink = document.createElement("a");
-                const objectUrl = URL.createObjectURL(blob);
-                downloadLink.href = objectUrl;
-                downloadLink.setAttribute("download", fileName);
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-                URL.revokeObjectURL(objectUrl);
-            } catch (error) {
-                console.error("Error downloading file:", error);
-                message.error("Failed to download file.");
-            }
-        };
-    
-        // 📌 Delete file/folder
-        const deleteItem = async (item: IFileItem) => {
-            const confirmed = window.confirm(`Are you sure you want to delete ${item.Name}?`);
-            if (!confirmed) return;
-    
-            const webAbsoluteUrl = props.context.pageContext.web.absoluteUrl;
-            const deleteUrl = `${webAbsoluteUrl}/_api/web/${item.IsFolder
-                ? "GetFolderByServerRelativeUrl"
-                : "GetFileByServerRelativeUrl"
-                }('${encodeURIComponent(item.ServerRelativeUrl)}')`;
-    
-            try {
-                const requestDigest = await getRequestDigest();
-    
-                const response = await fetch(deleteUrl, {
-                    method: "POST", // ✅ SharePoint requires POST with override
-                    headers: {
-                        Accept: "application/json;odata=verbose",
-                        "X-RequestDigest": requestDigest,
-                        "X-HTTP-Method": "DELETE",
-                        "IF-MATCH": "*", // ✅ bypass concurrency issues
-                    },
-                });
-    
-                if (response.ok) {
-                    message.success(`${item.Name} deleted successfully`);
-    
-                    // ✅ Remove from UI without reload
-                    setFiles((prevFiles) =>
-                        prevFiles.filter((f) => f.ServerRelativeUrl !== item.ServerRelativeUrl)
+
+                const data = await response.json();
+
+                // Add files
+                for (const file of data.d.Files.results) {
+                    const fileResponse = await fetch(
+                        `${props.context.pageContext.web.absoluteUrl}${encodeURIComponent(file.ServerRelativeUrl)}`
                     );
-                } else {
-                    const errorData = await response.text();
-                    message.error(`Failed to delete ${item.Name}: ${errorData}`);
+                    const blob = await fileResponse.blob();
+                    parentZip.file(file.Name, blob);
+                }
+
+                // Recurse into subfolders
+                for (const subfolder of data.d.Folders.results) {
+                    const subfolderZip = parentZip.folder(subfolder.Name)!;
+                    await addFilesToZip(subfolder.ServerRelativeUrl, subfolderZip);
                 }
             } catch (error) {
-                console.error("Error deleting item:", error);
-                message.error(`Error deleting ${item.Name}`);
+                console.error("Error adding files to ZIP:", error);
             }
         };
+
+        await addFilesToZip(folder.ServerRelativeUrl, folderZip);
+        zip.generateAsync({ type: "blob" }).then((blob) =>
+            saveAs(blob, `${folder.Name}.zip`)
+        );
+    };
+
+    // 📌 Download file directly
+    const downloadFile = async (fileUrl: string, fileName: string) => {
+        if (!fileUrl) {
+            message.error("File URL not found.");
+            return;
+        }
+
+        const serverRelativeUrl = fileUrl.replace(
+            props.context.pageContext.web.absoluteUrl,
+            ""
+        );
+
+        const downloadApiUrl = `${props.context.pageContext.web.absoluteUrl}/_api/web/GetFileByServerRelativeUrl('${encodeURIComponent(serverRelativeUrl)}')/$value`;
+
+        try {
+            const response = await fetch(downloadApiUrl, {
+                method: "GET",
+                headers: {
+                    Accept: "application/octet-stream",
+                },
+            });
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(`Failed to download file. Status: ${response.status}, ${err}`);
+            }
+
+            const blob = await response.blob();
+            const downloadLink = document.createElement("a");
+            const objectUrl = URL.createObjectURL(blob);
+            downloadLink.href = objectUrl;
+            downloadLink.setAttribute("download", fileName);
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(objectUrl);
+        } catch (error) {
+            console.error("Error downloading file:", error);
+            message.error("Failed to download file.");
+        }
+    };
+
+    // 📌 Delete file/folder
+    const deleteItem = async (item: IFileItem) => {
+        const confirmed = window.confirm(`Are you sure you want to delete ${item.Name}?`);
+        if (!confirmed) return;
+
+        const webAbsoluteUrl = props.context.pageContext.web.absoluteUrl;
+        const deleteUrl = `${webAbsoluteUrl}/_api/web/${item.IsFolder
+            ? "GetFolderByServerRelativeUrl"
+            : "GetFileByServerRelativeUrl"
+            }('${encodeURIComponent(item.ServerRelativeUrl)}')`;
+
+        try {
+            const requestDigest = await getRequestDigest();
+
+            const response = await fetch(deleteUrl, {
+                method: "POST", // ✅ SharePoint requires POST with override
+                headers: {
+                    Accept: "application/json;odata=verbose",
+                    "X-RequestDigest": requestDigest,
+                    "X-HTTP-Method": "DELETE",
+                    "IF-MATCH": "*", // ✅ bypass concurrency issues
+                },
+            });
+
+            if (response.ok) {
+                message.success(`${item.Name} deleted successfully`);
+
+                // ✅ Remove from UI without reload
+                setFiles((prevFiles) =>
+                    prevFiles.filter((f) => f.ServerRelativeUrl !== item.ServerRelativeUrl)
+                );
+            } else {
+                const errorData = await response.text();
+                message.error(`Failed to delete ${item.Name}: ${errorData}`);
+            }
+        } catch (error) {
+            console.error("Error deleting item:", error);
+            message.error(`Error deleting ${item.Name}`);
+        }
+    };
+     
     return (
         <div className="document-page">
-            <h2 style={{background: "#18465e",color: "white"}}>Folders & Files of {libraryName}</h2>
+            <h2 style={{ background: "#18465e", color: "white" }}>
+                {isArabic
+                    ? `المجلدات والملفات في ${translatedLibraryName}`
+                    : `Folders & Files of ${libraryName}`}
+            </h2>
             <div className="Buttondrop">
                 <div className="libhead">
 
-                  <button className="dropbtn" onClick={() => { navigate(`/Library`);}}>
-                    {isArabic ? "الصفحة الرئيسية" : "Home"}                  </button>
+                    <button className="dropbtn" onClick={() => { navigate(`/Library`); }}>
+                        {isArabic ? "الصفحة الرئيسية" : "Home"}                  </button>
                 </div>
                 <div className="libhead">
                     <div className="dropdown" ref={dropdownRef}>
@@ -642,7 +751,7 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
                         setCurrentFolder(null);
                     }}
                 >
-                    {libraryName}
+{isArabic ? translatedLibraryName : libraryName}
                 </span>
 
                 {breadcrumb.map((b, i) => (
@@ -651,7 +760,7 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
                         className="arrow-crumb"
                         onClick={() => handleBreadcrumbClick(i)}
                     >
-                        {b.Name}
+{isArabic ? (b.TranslatedName || b.Name) : b.Name}
                     </span>
                 ))}
             </div>
@@ -660,10 +769,10 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
             <table className="table">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Modified</th>
-                        <th>Owner</th>
-                        <th>Action</th>
+                        <th>{isArabic ? "الاسم" : "Name"}</th>
+                        <th>{isArabic ? "تاريخ التعديل" : "Modified"}</th>
+                        <th>{isArabic ? "المالك" : "Owner"}</th>
+                        <th>{isArabic ? "الإجراءات" : "Actions"}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -672,7 +781,8 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
                             <tr key={i} onClick={() => handleItemClick(f)}>
                                 <td>
                                     {f.IsFolder ? <FolderOutlined /> : <FileOutlined />}{" "}
-                                    {f.Name}
+                                    {isArabic && !f.TranslatedName ? "..." : (f.TranslatedName || f.Name)}
+
                                 </td>
                                 <td>
                                     {f.TimeLastModified
@@ -680,27 +790,27 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
                                         : "-"}
                                 </td>
                                 <td>{f.AuthorTitle}</td>
-                                 <td
-                                                onClick={(e) => e.stopPropagation()} // ⛔ prevent row click navigation
-                                            >
-                                                {f.IsFolder ? (
-                                                    <DownloadOutlined
-                                                        style={{ color: "#1890ff", marginRight: 12, cursor: "pointer" }}
-                                                        onClick={() => downloadFolderAsZip(f)}
-                                                    />
-                                                ) : (
-                                                    <DownloadOutlined
-                                                        style={{ color: "#1890ff", marginRight: 12, cursor: "pointer" }}
-                                                        // style={{ color: "#1890ff", marginRight: 12, cursor: "pointer", display: isAuthorized ? "inline-block" : "none" }}
-                                                        onClick={() => downloadFile(f.ServerRelativeUrl, f.Name)}
-                                                    />
-                                                )}
+                                <td
+                                    onClick={(e) => e.stopPropagation()} // ⛔ prevent row click navigation
+                                >
+                                    {f.IsFolder ? (
+                                        <DownloadOutlined
+                                            style={{ color: "#1890ff", marginRight: 12, cursor: "pointer" }}
+                                            onClick={() => downloadFolderAsZip(f)}
+                                        />
+                                    ) : (
+                                        <DownloadOutlined
+                                            style={{ color: "#1890ff", marginRight: 12, cursor: "pointer" }}
+                                            // style={{ color: "#1890ff", marginRight: 12, cursor: "pointer", display: isAuthorized ? "inline-block" : "none" }}
+                                            onClick={() => downloadFile(f.ServerRelativeUrl, f.Name)}
+                                        />
+                                    )}
 
-                                                <DeleteOutlined
-                                                    style={{ color: "red", cursor: "pointer" }}
-                                                    onClick={() => deleteItem(f)}
-                                                />
-                                            </td>
+                                    <DeleteOutlined
+                                        style={{ color: "red", cursor: "pointer" }}
+                                        onClick={() => deleteItem(f)}
+                                    />
+                                </td>
                             </tr>
                         ))
                     ) : (

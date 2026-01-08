@@ -57,6 +57,9 @@ import Upload from "../../assets/img/Upload.png";
 import rightblack from "../../assets/img/Rightblack.png";
 import leftblack from "../../assets/img/Leftblack.png";
 import link from "../../assets/img/link.png";
+
+import { LanguageProvider } from '../Homepage/Languagecontext';
+
 // ----------------------------------------------------------------
 
 
@@ -1155,26 +1158,36 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
     // Dynamic Translation
     const handleTranslateClick = async () => {
         const targetLang = isArabic ? "en" : "ar";
-        setLanguage(targetLang);
+
+        // 🔹 Translate libraries only once
         if (!isArabic && translatedLibraries.length === 0) {
-            // Only translate once and store it
             const translatedLibs = await Promise.all(
                 baseLibraries.map(async (lib) => {
                     const translatedTitle = await translateText(lib.Title, targetLang);
                     return { ...lib, TranslatedTitle: translatedTitle };
                 })
             );
+
             setTranslatedLibraries(translatedLibs);
+
             if (activeLibrary) {
-                const updatedActive = translatedLibs.find(l => l.Id === activeLibrary.Id);
-                setActiveLibrary(updatedActive);
+                const updatedActive = translatedLibs.find(
+                    l => l.Id === activeLibrary.Id
+                );
+                setActiveLibrary(updatedActive || null);
             }
         }
 
-        setIsArabic(!isArabic);
-        //   localStorage.setItem("isArabic", (!isArabic).toString());
+        const nextIsArabic = !isArabic;
+
+        // ✅ SAVE GLOBALLY
+        localStorage.setItem("isArabic", nextIsArabic.toString());
+
+        setIsArabic(nextIsArabic);
+        setLanguage(nextIsArabic ? "ar" : "en");
         setCurrentIndex(0);
     };
+
 
     const fileColumns: IColumn[] = [
         {
@@ -1395,7 +1408,11 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                                     key={lib.Id}
                                     // href={`#/library/${lib.Title}`}
                                     className="circleBox"
-                                    onClick={() => navigate(`/library/${lib.Title}`)}
+                                    onClick={() =>
+                                        navigate(`/library/${lib.Title}`, {
+                                            state: { isArabic }
+                                        })
+                                    } 
                                     style={{ cursor: "pointer" }}
                                 >
                                     <div className="erp-card">
