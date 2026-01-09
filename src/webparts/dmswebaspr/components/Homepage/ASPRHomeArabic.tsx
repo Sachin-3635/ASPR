@@ -1270,16 +1270,6 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                 </div>
                 <div className="Headline"></div>
                 <div className="topbannerbox">
-                    <div className="LibSearch">
-                        {/* Search Input */}
-                        <Input.Search
-                            placeholder="Find a Library"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="Sealib"
-                            allowClear
-                        />
-                    </div>
                     <div className="navmainsection">
                         <ul className="nav-tabs">
                             <li>
@@ -1308,27 +1298,18 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                                 </div>
 
                             </li>
-                            <li
-                                className={activeTab === "Home" ? "active" : ""}
-                                onClick={() => {
-                                    if (libraryName) {
-                                        navigate(`/library/${libraryName}`);
-                                    } else if (firstLibraryName) {
-                                        // fallback if no current library
-                                        navigate(`/library/${firstLibraryName}`);
-                                    }
-                                }}
-                            >
-                                {isArabic ? "الصفحة الرئيسية" : "Home"}
-                            </li>
 
-                            <li
-                                className={activeTab === "Dashboard" ? "active" : ""}
-                                onClick={() => navigate("/dashboard")}
-                            >
-                                {isArabic ? "لوحة التحكم" : "Dashboard"}
-                            </li>
                         </ul>
+                    </div>
+                    <div className="LibSearch">
+                        {/* Search Input */}
+                        <Input.Search
+                            placeholder="Find a Library"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="Sealib"
+                            allowClear
+                        />
                     </div>
                 </div>
             </div>
