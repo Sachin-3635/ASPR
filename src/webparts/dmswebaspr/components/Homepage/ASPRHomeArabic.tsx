@@ -57,6 +57,9 @@ import Upload from "../../assets/img/Upload.png";
 import rightblack from "../../assets/img/Rightblack.png";
 import leftblack from "../../assets/img/Leftblack.png";
 import link from "../../assets/img/link.png";
+
+import { LanguageProvider } from '../Homepage/Languagecontext';
+
 // ----------------------------------------------------------------
 
 
@@ -174,7 +177,7 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
 
     useEffect(() => {
         if (location.pathname.toLowerCase() === '/library' && firstLibraryName) {
-            navigate(`/Library/${firstLibraryName}`);
+            navigate(`/Library`);
         }
     }, [location.pathname, firstLibraryName]);
 
@@ -1155,26 +1158,36 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
     // Dynamic Translation
     const handleTranslateClick = async () => {
         const targetLang = isArabic ? "en" : "ar";
-        setLanguage(targetLang);
+
+        // 🔹 Translate libraries only once
         if (!isArabic && translatedLibraries.length === 0) {
-            // Only translate once and store it
             const translatedLibs = await Promise.all(
                 baseLibraries.map(async (lib) => {
                     const translatedTitle = await translateText(lib.Title, targetLang);
                     return { ...lib, TranslatedTitle: translatedTitle };
                 })
             );
+
             setTranslatedLibraries(translatedLibs);
+
             if (activeLibrary) {
-                const updatedActive = translatedLibs.find(l => l.Id === activeLibrary.Id);
-                setActiveLibrary(updatedActive);
+                const updatedActive = translatedLibs.find(
+                    l => l.Id === activeLibrary.Id
+                );
+                setActiveLibrary(updatedActive || null);
             }
         }
 
-        setIsArabic(!isArabic);
-        //   localStorage.setItem("isArabic", (!isArabic).toString());
+        const nextIsArabic = !isArabic;
+
+        // ✅ SAVE GLOBALLY
+        localStorage.setItem("isArabic", nextIsArabic.toString());
+
+        setIsArabic(nextIsArabic);
+        setLanguage(nextIsArabic ? "ar" : "en");
         setCurrentIndex(0);
     };
+
 
     const fileColumns: IColumn[] = [
         {
@@ -1374,8 +1387,14 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
 
                                 <a
                                     key={lib.Id}
-                                    href={`#/library/${lib.Title}`}
+                                    // href={`#/library/${lib.Title}`}
                                     className="circleBox"
+                                    onClick={() =>
+                                        navigate(`/library/${lib.Title}`, {
+                                            state: { isArabic }
+                                        })
+                                    } 
+                                    style={{ cursor: "pointer" }}
                                 >
                                     <div className="erp-card">
                                         {/* Header */}
@@ -1390,10 +1409,14 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
 
                                         {/* Body */}
                                         <div className="erp-card-body">
-                                            <p>Access employee management systems.</p>
+                                            <p>
+                                                {isArabic ? "الوصول إلى أنظمة إدارةالموظفين." : "Access employee management systems."}
+                                            </p>
                                             {/* Footer Button */}
                                             <div className="erp-card-footer">
-                                                <span>Access ERP System</span>
+                                                <span>
+                                                    {isArabic ? "الوصول هنا" : "Access Here"}
+                                                </span>
                                                 <img src={link} alt="" />
                                             </div>
                                         </div>
@@ -1425,7 +1448,7 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                 </div>
             </div>
 
-            <div className="Buttondrop">
+            {/* <div className="Buttondrop" style={{display:"none !important"}}>
                 <div className="libhead">
                     <div className="dropdown" ref={dropdownRef}>
                         <button className="dropbtn" onClick={toggleDropdown}>
@@ -1436,15 +1459,13 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                             <a onClick={() => { setShowModal(true); setIsOpen(false); }} className="cursor"><span className="icon"><img src={Plus} alt="" /></span> {isArabic ? "مجلد جديد" : "New Folder"}</a>
                             <a onClick={() => { setShowModalFile(true); setIsOpen(false); }} className="cursor"><span className="icon"><img src={Upload} alt="" /></span>{isArabic ? "تحميل ملف" : "Upload File"}</a>
                             <Link to="/Request" target="_blank"><span className="icon"><img src={Plus} alt="" /></span> {isArabic ? "إنشاء مستودع" : "Create Repository"}</Link>
-                            {/* <a href="#"><span className="icon"><img src={Plus} alt="" /></span> Create Repository</a> */}
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             {/* Content Section */}
-            <div className="contentSection">
-                {/* Files Table */}
+            {/* <div className="contentSection" style={{display:"none !important"}}>
 
                 <div className="block">
                     <div className="box-header">
@@ -1480,7 +1501,6 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                             </div>
                         )}
 
-                        {/* Files Table */}
                         <table className="table">
                             <thead>
                                 <tr>
@@ -1546,38 +1566,10 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                                 )}
                             </tbody>
                         </table>
-                        {/* Fluent UI File List */}
-                        {/* {loading ? (
-  <ShimmeredDetailsList
-    items={[]}
-    columns={fileColumns}
-    enableShimmer
-    selectionMode={SelectionMode.none}
-  />
-) : paginatedFiles.length > 0 ? (
-  <DetailsList
-    items={paginatedFiles}
-    columns={fileColumns}
-    setKey="files"
-    getKey={(item, index) =>
-      item.ServerRelativeUrl || index!.toString()
-    }
-    layoutMode={DetailsListLayoutMode.justified}
-    selectionMode={SelectionMode.none}
-    isHeaderVisible={true}
-    onShouldVirtualize={() => false}
-  />
-) : (
-  <div className="noData">
-    {isArabic
-      ? "لم يتم العثور على أي ملفات أو مجلدات"
-      : "No files or folders found"}
-  </div>
-)} */}
+ 
 
 
 
-                        {/* Numbered Pagination */}
                         {files.length > pageSize && (
 
                             <div className="pagination">
@@ -1615,7 +1607,6 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                     </div>
                 </div>
 
-                {/* Recent Files */}
                 <div className="block">
                     <div className="box-headersec">
                         <h2>{isArabic ? "أحدث الملفات" : "Recent Files"}</h2>
@@ -1643,10 +1634,10 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
 
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             {/* Modal for Folder */}
-            {showModal && (
+            {/* {showModal && (
                 <div className="modalOverlay">
                     <div className="modalContent">
                         <div className="modelbox">
@@ -1706,10 +1697,10 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                         </div>
                     </div>
                 </div>
-            )}
+            )} */}
 
             {/* Modal for Files */}
-            {showModalFile && (
+            {/* {showModalFile && (
                 <div className="modalOverlay">
                     <div className="modalContent">
                         <div className="modelbox">
@@ -1734,7 +1725,7 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                         </div>
                     </div>
                 </div>
-            )}
+            )} */}
         </div >
     );
 };
