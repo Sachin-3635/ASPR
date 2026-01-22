@@ -130,10 +130,20 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
     const [userEmail, setUserEmail] = useState<string>("");
     const [userPhotoUrl, setUserPhotoUrl] = useState<string>("");
 
-    const itemsPerPage = 8; // sliding window size
-    const [currentIndex, setCurrentIndex] = useState(
-        Math.max(libraries.length - itemsPerPage, 0)
-    ); // start from the latest 5
+    // const itemsPerPage = 8; // sliding window size
+    // const [currentIndex, setCurrentIndex] = useState(
+    //     Math.max(libraries.length - itemsPerPage, 0)
+    // ); // start from the latest 5
+
+
+    const itemsPerPage = 8;
+
+    const [currentIndex, setCurrentIndex] = useState(() =>
+        libraries.length > itemsPerPage
+            ? libraries.length - itemsPerPage
+            : 0
+    );
+
 
 
     // pagination states
@@ -1343,7 +1353,7 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                         )}
                     </div>
 
-                    {!searchQuery && (
+                    {/* {!searchQuery && (
                         <div className={isArabic ? "erp-sliderButtons" : "sliderButtons"}>
                             <button className="sliderBtn left" onClick={prevLibrary} disabled={currentIndex === 0}>
                                 <img src={leftblack} alt="Previous" className="iconblack" />
@@ -1356,7 +1366,31 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                                 <img src={rightblack} alt="Next" className="iconblack" />
                             </button>
                         </div>
+                    )} */}
+
+
+                    {!searchQuery && libraries.length > itemsPerPage && (
+                        <div className={isArabic ? "erp-sliderButtons" : "sliderButtons"}>
+                            <button
+                                className="sliderBtn left"
+                                onClick={prevLibrary}
+                                disabled={currentIndex === 0}
+                            >
+                                <img src={leftblack} alt="Previous" className="iconblack" />
+                            </button>
+
+                            <button
+                                className="sliderBtn right"
+                                onClick={nextLibrary}
+                                disabled={currentIndex + itemsPerPage >= libraries.length}
+                            >
+                                <img src={rightblack} alt="Next" className="iconblack" />
+                            </button>
+                        </div>
                     )}
+
+
+
                 </div>
             </div>
 

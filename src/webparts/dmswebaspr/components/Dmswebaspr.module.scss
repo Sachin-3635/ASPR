@@ -316,7 +316,7 @@
     gap: 30px;
     justify-content: center;
     flex-wrap: wrap;
-    margin: 20px 0;
+    margin: 20px 0px 0px 0px;
   }
 
   .circleBox {
@@ -896,6 +896,7 @@
     cursor: pointer;
     font-size: 16px;
     margin-right: 0;
+    text-decoration: none;
   }
 
   .arrow-wrapper {
@@ -966,7 +967,8 @@
   }
 
   .modelbox {
-    background-color: #18465e;
+    // background-color: #18465e;
+    background: rgb(0, 106, 93);
     color: #fff;
     padding: 5px;
     border-top-left-radius: 5px;
@@ -995,6 +997,25 @@
 
   /* Target the PeoplePicker labels */
   .Modelboxdown .ms-Label {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    padding: 0px !important;
+  }
+
+  /* Apply to all labels in your modal */
+  .ModelboxdownArabic label {
+    font-size: 14px;
+    /* or whatever size you want */
+    font-weight: 600;
+    /* same boldness */
+    display: block;
+    /* keeps consistent alignment */
+    margin-bottom: 5px;
+    text-align: right;
+  }
+
+  /* Target the PeoplePicker labels */
+  .ModelboxdownArabic .ms-Label {
     font-size: 14px !important;
     font-weight: 600 !important;
     padding: 0px !important;
@@ -1036,7 +1057,8 @@
 
   .bordered {
     align-items: center;
-    background-color: #18465e;
+    // background-color: #18465e;
+    background: rgb(0, 106, 93);
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
     display: flex;
@@ -1232,6 +1254,29 @@
 
   .lang-toggle {
     flex-direction: none !important;
+  }
+
+  @media (min-width: 1441px) {
+    .headingpart {
+      font-size: 40px;
+    }
+
+    .dropbtn {
+      font-size: 40px;
+    }
+
+    .arrow-crumb {
+      font-size: 40px;
+    }
+
+    .table thead th {
+      font-size: 40px;
+    }
+
+    .downArrow {
+      height: 35px;
+      width: 40px;
+    }
   }
 
 }

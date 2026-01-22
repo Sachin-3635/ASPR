@@ -303,74 +303,74 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
         setBreadcrumb(path);
         setCurrentFolder(path[path.length - 1].ServerRelativeUrl);
     };
-const hasType = (value: number, type: number) => {
-  return (value & type) === type;
-};
+    const hasType = (value: number, type: number) => {
+        return (value & type) === type;
+    };
 
-const assignPermissions = async (
-  principals: any[],
-  roleDefId: number,
-  folderItemUrl: string,
-  webAbsoluteUrl: string,
-  requestDigest: string
-) => {
-  for (const p of principals) {
-    try {
-      let principalId: number | null = null;
+    const assignPermissions = async (
+        principals: any[],
+        roleDefId: number,
+        folderItemUrl: string,
+        webAbsoluteUrl: string,
+        requestDigest: string
+    ) => {
+        for (const p of principals) {
+            try {
+                let principalId: number | null = null;
 
-      // 🟢 CASE 1: SharePoint Group (NO claims login)
-      if (!p.loginName || !p.loginName.includes("|")) {
-        const res = await fetch(
-          `${webAbsoluteUrl}/_api/web/sitegroups/getbyname('${encodeURIComponent(p.text)}')`,
-          { headers: { Accept: "application/json;odata=verbose" } }
-        );
+                // 🟢 CASE 1: SharePoint Group (NO claims login)
+                if (!p.loginName || !p.loginName.includes("|")) {
+                    const res = await fetch(
+                        `${webAbsoluteUrl}/_api/web/sitegroups/getbyname('${encodeURIComponent(p.text)}')`,
+                        { headers: { Accept: "application/json;odata=verbose" } }
+                    );
 
-        if (!res.ok) {
-          console.error("SP Group not found:", p.text);
-          continue;
-        }
+                    if (!res.ok) {
+                        console.error("SP Group not found:", p.text);
+                        continue;
+                    }
 
-        const data = await res.json();
-        principalId = data.d.Id;
-      }
+                    const data = await res.json();
+                    principalId = data.d.Id;
+                }
 
-      // 🟢 CASE 2: User or Security Group
-      else {
-        const ensureRes = await fetch(
-          `${webAbsoluteUrl}/_api/web/ensureuser('${encodeURIComponent(p.loginName)}')`,
-          {
-            method: "POST",
-            headers: {
-              Accept: "application/json;odata=verbose",
-              "Content-Type": "application/json;odata=verbose",
-              "X-RequestDigest": requestDigest
+                // 🟢 CASE 2: User or Security Group
+                else {
+                    const ensureRes = await fetch(
+                        `${webAbsoluteUrl}/_api/web/ensureuser('${encodeURIComponent(p.loginName)}')`,
+                        {
+                            method: "POST",
+                            headers: {
+                                Accept: "application/json;odata=verbose",
+                                "Content-Type": "application/json;odata=verbose",
+                                "X-RequestDigest": requestDigest
+                            }
+                        }
+                    );
+
+                    const ensureData = await ensureRes.json();
+                    principalId = ensureData.d.Id;
+                }
+
+                if (!principalId) continue;
+
+                // ✅ Assign role
+                await fetch(
+                    `${folderItemUrl}/roleassignments/addroleassignment(principalid=${principalId},roledefid=${roleDefId})`,
+                    {
+                        method: "POST",
+                        headers: {
+                            Accept: "application/json;odata=verbose",
+                            "X-RequestDigest": requestDigest
+                        }
+                    }
+                );
+
+            } catch (e) {
+                console.error("Permission failed for:", p.text || p.loginName, e);
             }
-          }
-        );
-
-        const ensureData = await ensureRes.json();
-        principalId = ensureData.d.Id;
-      }
-
-      if (!principalId) continue;
-
-      // ✅ Assign role
-      await fetch(
-        `${folderItemUrl}/roleassignments/addroleassignment(principalid=${principalId},roledefid=${roleDefId})`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json;odata=verbose",
-            "X-RequestDigest": requestDigest
-          }
         }
-      );
-
-    } catch (e) {
-      console.error("Permission failed for:", p.text || p.loginName, e);
-    }
-  }
-};
+    };
 
 
     const handleCreateFolder = async () => {
@@ -448,7 +448,7 @@ const assignPermissions = async (
                 message.error("Custom permission levels not found.");
                 return;
             }
- await assignPermissions(
+            await assignPermissions(
                 selectedUsers,
                 docEditorsRole.Id,
                 folderItemUrl,
@@ -464,7 +464,7 @@ const assignPermissions = async (
                 requestDigest
             );
             // 7️⃣ Assign permissions (FIXED)
-           
+
 
 
             // 🔐 COMMON FUNCTION TO ASSIGN PERMISSIONS
@@ -474,7 +474,8 @@ const assignPermissions = async (
             // await assignPermissions(selectedUsers, docEditorsRole.Id, folderItemUrl, webAbsoluteUrl, requestDigest);
             //  await assignPermissions(viewUsers, docViewRole.Id, folderItemUrl, webAbsoluteUrl, requestDigest);
 
-            message.success(`Folder '${newFolderName}' created with permissions.`);
+            alert(`Folder '${newFolderName}' created with permissions.`);
+            //message.success(`Folder '${newFolderName}' created with permissions.`);
             closeModal();
             setNewFolderName("");
             setNewFoldershortName("");
@@ -540,7 +541,8 @@ const assignPermissions = async (
             const failedFiles = results.filter((res) => !res.success);
 
             if (successFiles.length > 0) {
-                message.success(`Uploaded: ${successFiles.join(", ")}`);
+                // message.success(`Uploaded: ${successFiles.join(", ")}`);
+                alert(`Uploaded ${successFiles.join(",")}`);
 
                 // ✅ Reload files in the current folder instead of resetting state
                 const folder = sp.web.getFolderByServerRelativePath(targetFolder);
@@ -754,7 +756,7 @@ const assignPermissions = async (
     return (
         <div className={`document-page ${isArabic ? "rtl" : "ltr"}`}
             dir={isArabic ? "rtl" : "ltr"}>
-            <h2 style={{ background: "#006a5d", color: "white" }}>
+            <h2  className="headingpart" style={{ background: "#006a5d", color: "white" }}>
                 {isArabic
                     ? `المجلدات والملفات في ${translatedLibraryName}`
                     : `Folders & Files of ${libraryName}`}
@@ -781,6 +783,11 @@ const assignPermissions = async (
             </div>
             {/* Breadcrumb */}
             <div className="arrow-breadcrumbs">
+
+                <span>
+                    <Link to="/" className="arrow-crumb">Home </Link>
+                    <i className="fas fa-angle-right"></i>
+                </span>
                 <span
                     className="arrow-crumb"
                     onClick={() => {
@@ -868,7 +875,7 @@ const assignPermissions = async (
                         <div className="modelbox">
                             <h3>{isArabic ? "قم بإنشاء مجلد" : "Create a folder"}</h3>
                         </div>
-                        <div className="Modelboxdown">
+                        <div className={isArabic ? "ModelboxdownArabic" : "Modelboxdown"}>
                             <label htmlFor="FolderName">{isArabic ? "اسم المجلد" : "FolderName"}</label>
                             <input
                                 placeholder="Enter new folder name"
