@@ -14,6 +14,9 @@ import "@pnp/sp/lists/web";
 import { setupSP } from '../services/dal/pnpget';
 import { LibraryDocuments } from './DMSPage/DMSShowPage';
 import { LanguageProvider } from '../components/Homepage/Languagecontext';
+
+import { FooterHome } from './Footer/Footer';
+
 interface IDmsModuleState {
   defaultLibraryTitle: string | null;
 }
@@ -67,7 +70,7 @@ export default class DmsModule extends React.Component<IDmswebasprProps, IDmsMod
  
     return (
       <section className={styles.welcome}>
-        <div>
+        <div style={{maxWidth: "1600px", margin: "0px auto"}}>
           <LanguageProvider>
           <HashRouter>
             <Routes>
@@ -92,6 +95,7 @@ export default class DmsModule extends React.Component<IDmswebasprProps, IDmsMod
               <Route path="/dashboard" element={<Dashboard {...this.props} />} />
               <Route path="/Request" element={<RequestPage {...this.props} />} />
             </Routes>
+            <FooterHome  {...this.props} />
           </HashRouter>
           </LanguageProvider>
         </div>
