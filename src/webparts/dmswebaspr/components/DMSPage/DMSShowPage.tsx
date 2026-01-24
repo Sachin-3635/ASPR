@@ -756,7 +756,7 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
     return (
         <div className={`document-page ${isArabic ? "rtl" : "ltr"}`}
             dir={isArabic ? "rtl" : "ltr"}>
-            <h2  className="headingpart" style={{ background: "#006a5d", color: "white" }}>
+            <h2 className="headingpart" style={{ background: "#006a5d", color: "white" }}>
                 {isArabic
                     ? `المجلدات والملفات في ${translatedLibraryName}`
                     : `Folders & Files of ${libraryName}`}
@@ -785,7 +785,7 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
             <div className="arrow-breadcrumbs">
 
                 <span>
-                    <Link to="/" className="arrow-crumb">Home </Link>
+                    <Link to="/" className="arrow-crumb">{isArabic ? "بيت" : "Home"} </Link>
                     <i className="fas fa-angle-right"></i>
                 </span>
                 <span
@@ -878,7 +878,7 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
                         <div className={isArabic ? "ModelboxdownArabic" : "Modelboxdown"}>
                             <label htmlFor="FolderName">{isArabic ? "اسم المجلد" : "FolderName"}</label>
                             <input
-                                placeholder="Enter new folder name"
+                                placeholder={isArabic ? "أدخل اسم المجلد الجديد" : "Enter new folder name"}
                                 value={newFolderName}
                                 onChange={(e) => setNewFolderName(e.target.value)}
                                 className="modelinput"
@@ -886,7 +886,10 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
 
                             <div className="">
                                 <label htmlFor="FoldershortName">{isArabic ? "اسم المجلداسم المجلد المختصر" : "Folder Short Name"}</label>
-                                <input placeholder="Enter new folder short name" value={newFoldershortName} onChange={(e) => setNewFoldershortName(e.target.value)} className="modelinput" />
+                                <input placeholder={isArabic ? "أدخل اسمًا مختصرًا للمجلد الجديد" : "Enter new folder short name"}
+                                    value={newFoldershortName}
+                                    onChange={(e) => setNewFoldershortName(e.target.value)} className="modelinput"
+                                />
                             </div>
 
                             <div style={{ marginTop: 10, marginBottom: 10, textAlign: "left" }}>

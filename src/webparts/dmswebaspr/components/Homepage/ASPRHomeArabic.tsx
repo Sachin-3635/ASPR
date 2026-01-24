@@ -1253,7 +1253,7 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
                     <div className="LibSearch">
                         {/* Search Input */}
                         <Input.Search
-                            placeholder="Find a Library"
+                            placeholder={isArabic ? "ابحث عن مكتبة" : "Find a Library"}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="Sealib"
