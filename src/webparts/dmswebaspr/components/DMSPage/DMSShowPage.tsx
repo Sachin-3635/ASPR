@@ -52,7 +52,9 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
 
     const location = useLocation();
 
-    const isArabic = location.state?.isArabic ?? localStorage.getItem("isArabic") === "true";
+const [isArabic, setIsArabic] = useState<boolean>(
+  localStorage.getItem("isArabic") === "ar"
+);
     const [files, setFiles] = useState<IFileItem[]>([]);
     const [breadcrumb, setBreadcrumb] = useState<IFileItem[]>([]);
     const [currentFolder, setCurrentFolder] = useState<string | null>(null);
@@ -77,6 +79,20 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
         spHttpClient: props.currentSPContext.spHttpClient as unknown as IPeoplePickerContext["spHttpClient"],
         absoluteUrl: props.currentSPContext.pageContext.web.absoluteUrl,
     };
+
+    useEffect(() => {
+  const syncLanguage = () => {
+    setIsArabic(localStorage.getItem("isArabic") === "ar");
+  };
+
+  window.addEventListener("storage", syncLanguage);
+  window.addEventListener("languageChanged", syncLanguage);
+
+  return () => {
+    window.removeEventListener("storage", syncLanguage);
+    window.removeEventListener("languageChanged", syncLanguage);
+  };
+}, []);
 
     useEffect(() => {
         // const savedLang = localStorage.getItem("isArabic");
@@ -221,7 +237,7 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
                                 AuthorTitle: f.ListItemAllFields?.Author?.Title || "",
                                 IsFolder: true,
                                 ServerRelativeUrl: f.ServerRelativeUrl,
-                                TranslatedName: translatedName
+                                TranslatedName: f.Name
                             };
                         }),
 
@@ -237,7 +253,7 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
                             AuthorTitle: f.Author?.Title || "",
                             IsFolder: false,
                             ServerRelativeUrl: f.ServerRelativeUrl,
-                            TranslatedName: translatedName
+                            TranslatedName: f.Name
                         };
                     })
                 ]);
@@ -253,7 +269,7 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
         };
 
         loadFiles();
-    }, [libraryName, currentFolder]);
+    }, [libraryName, currentFolder, isArabic]);
     useEffect(() => {
         if (!isArabic) return;
 
@@ -801,7 +817,7 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
                 {breadcrumb.map((b, i) => (
                     <>
                         <span
-                            key={i}
+                            key={i} 
                             className="arrow-crumb"
                             onClick={() => handleBreadcrumbClick(i)}
                         >
@@ -876,24 +892,24 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
                             <h3>{isArabic ? "قم بإنشاء مجلد" : "Create a folder"}</h3>
                         </div>
                         <div className={isArabic ? "ModelboxdownArabic" : "Modelboxdown"}>
-                            <label htmlFor="FolderName">{isArabic ? "اسم المجلد" : "FolderName"}</label>
+                            <label htmlFor="FolderName">{isArabic ? "اسم الملف" : "FolderName"}</label>
                             <input
-                                placeholder={isArabic ? "أدخل اسم المجلد الجديد" : "Enter new folder name"}
+                                placeholder={isArabic ? "ادخل اسم الملف الجديد" : "Enter new folder name"}
                                 value={newFolderName}
                                 onChange={(e) => setNewFolderName(e.target.value)}
                                 className="modelinput"
                             />
 
                             <div className="">
-                                <label htmlFor="FoldershortName">{isArabic ? "اسم المجلداسم المجلد المختصر" : "Folder Short Name"}</label>
-                                <input placeholder={isArabic ? "أدخل اسمًا مختصرًا للمجلد الجديد" : "Enter new folder short name"}
+                                <label htmlFor="FoldershortName">{isArabic ? "اسم الملف المختصر" : "Folder Short Name"}</label>
+                                <input placeholder={isArabic ? "ادخل اسم الملف المختصر الجديد" : "Enter new folder short name"}
                                     value={newFoldershortName}
                                     onChange={(e) => setNewFoldershortName(e.target.value)} className="modelinput"
                                 />
                             </div>
 
                             <div style={{ marginTop: 10, marginBottom: 10, textAlign: "left" }}>
-                                <label htmlFor="Edit">{isArabic ? "يحرر" : "Edit"}</label>
+                                <label htmlFor="Edit">{isArabic ? "تحرير" : "Edit"}</label>
                                 <PeoplePicker
                                     context={peoplePickerContext}
                                     // titleText="Edit"
@@ -914,7 +930,7 @@ export const LibraryDocuments: React.FC<IDmswebasprProps> = (props) => {
                                 />
                             </div>
                             <div style={{ marginTop: 10, marginBottom: 10, textAlign: "left" }}>
-                                <label htmlFor="View">{isArabic ? "منظر" : "View"}</label>
+                                <label htmlFor="View">{isArabic ? "عرض" : "View"}</label>
                                 <PeoplePicker
                                     context={peoplePickerContext}
                                     // titleText="View"

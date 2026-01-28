@@ -19,4 +19,5 @@ export interface IDmswebasprProps {
   // currentSPContext: any;
   currentSPContext: WebPartContext;
   sharedData?: any;
+  //isArabic: boolean;
 }

@@ -40,7 +40,8 @@ export default class DmswebasprWebPart extends BaseClientSideWebPart<IDmswebaspr
         userDisplayName: this.context.pageContext.user.displayName,
         // userid: this.context.pageContext.user.id,
         context: this.context,
-        sharedData: ""
+        sharedData: "",
+       // isArabic: false // Set default language to English
       }
     );
 
