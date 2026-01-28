@@ -70,7 +70,7 @@ export default class DmsModule extends React.Component<IDmswebasprProps, IDmsMod
  
     return (
       <section className={styles.welcome}>
-        <div style={{maxWidth: "1600px", margin: "0px auto"}}>
+        <div style={{margin: "0px auto"}}>
           <LanguageProvider>
           <HashRouter>
             <Routes>
