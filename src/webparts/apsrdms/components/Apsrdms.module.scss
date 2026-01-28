@@ -518,6 +518,11 @@
     font-size: 14px;
   }
 
+  .table thead th:last-child,
+  .table tbody td:last-child {
+    text-align: center;
+  }
+
   .table td {
     padding: 8px 12px;
     border-bottom: 1px solid #eee;

@@ -1079,7 +1079,7 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
 
         setIsArabic(nextIsArabic);
         setLanguage(nextIsArabic ? "ar" : "en");
-                localStorage.setItem("isArabic", nextIsArabic ? "ar" : "en");
+        localStorage.setItem("isArabic", nextIsArabic ? "ar" : "en");
 
         setCurrentIndex(0);
     };
@@ -1128,28 +1128,33 @@ export const ASPRDMSHomeArabic: React.FC<IDmswebasprProps> = (props) => {
             key: "actions",
             name: isArabic ? "الإجراءات" : "Actions",
             minWidth: 130,
+            styles: {
+                root: {
+                    textAlign: "center"
+                }
+            },
             onRender: (f: IFileItem) => (
-                <div onClick={(e) => e.stopPropagation()}>
-                    <DownloadOutlined
-                        style={{
-                            color: "#1890ff",
-                            marginInlineEnd: 12,
-                            cursor: "pointer"
-                        }}
-                        onClick={() =>
-                            f.IsFolder
-                                ? downloadFolderAsZip(f)
-                                : downloadFile(f.ServerRelativeUrl, f.Name)
-                        }
-                    />
+                    <div style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+                        <DownloadOutlined
+                            style={{
+                                color: "#1890ff",
+                                marginInlineEnd: 12,
+                                cursor: "pointer"
+                            }}
+                            onClick={() =>
+                                f.IsFolder
+                                    ? downloadFolderAsZip(f)
+                                    : downloadFile(f.ServerRelativeUrl, f.Name)
+                            }
+                        />
 
-                    <DeleteOutlined
-                        style={{ color: "red", cursor: "pointer" }}
-                        onClick={() => deleteItem(f)}
-                    />
-                </div>
-            )
-        }
+                        <DeleteOutlined
+                            style={{ color: "red", cursor: "pointer" }}
+                            onClick={() => deleteItem(f)}
+                        />
+                    </div>
+                )
+            }
     ];
 
     // const libraryIconMap: { [key: string]: string } = {

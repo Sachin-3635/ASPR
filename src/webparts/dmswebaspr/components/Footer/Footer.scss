@@ -2,7 +2,11 @@
   background-color: #006a5d;
   color: #fff;
   padding: 13px 20px;
-  border-top: 10px solid #efefef;
+  // border-top: 10px solid #efefef;
+  position: fixed;
+  bottom: 0%;
+  width: 97%;
+  z-index: 999;
 }
 .footer-copyright {
   grid-column: span 3; 
